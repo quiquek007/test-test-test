@@ -1,0 +1,155 @@
+* {
+  -moz-user-select: none;
+  user-select: none;
+  font-family: Arial;
+}
+.menu {
+  width: 100%;
+  height: 100%;
+  background: azure url("../img/menu/background.jpg") no-repeat;
+  background-size: cover;
+  text-align: center;
+}
+.menu h1 {
+  margin-top: 15vh;
+  font-size: 30px;
+  color: #b7b7b7;
+  text-shadow: 2px 2px 4px red;
+  cursor: default;
+}
+.menu .item {
+  display: block;
+  width: 20vw;
+  min-width: 250px;
+  margin: 2vh auto 0;
+  padding: 30px;
+  border: 3px solid transparent;
+  background: gray url("../img/menu/onhover.png") no-repeat;
+  background-size: 0;
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: 500;
+  transition: 1s all;
+}
+.menu .item:hover {
+  border: 3px solid black;
+  background: red url("../img/menu/onhover.png") no-repeat;
+  background-size: 150px;
+}
+.settings {
+  display: block;
+  width: 100%;
+}
+.settings .option {
+  display: block;
+  width: 350px;
+  margin: 6vh auto 5vh;
+  font-size: 20px;
+  color: red;
+  text-align: left;
+}
+.settings .option .optionCell {
+  float: right;
+  margin-left: 40px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border: 1px solid black;
+  cursor: pointer;
+  transition: 0.5s all;
+}
+.settings .option .optionCell:hover {
+  background: rgba(255, 157, 0, 0.41);
+}
+.settings .option .range {
+  float: right;
+  width: 80px;
+}
+.settings .option b {
+  color: #ff9d00;
+}
+.settings .option .checked {
+  position: relative;
+}
+.settings .option .checked:before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 16px;
+  height: 16px;
+  background: red;
+}
+.about h1 {
+  margin-top: 5vh;
+}
+.about .controls {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+.about .controls figcaption {
+  font-size: 27px;
+  color: white;
+}
+.about .controls img {
+  margin-left: 100px;
+  width: 90px;
+}
+.about .info {
+  flex-direction: row;
+  justify-content: center;
+}
+.about .info div {
+  position: relative;
+  flex-direction: column;
+  color: white;
+  font-size: 25px;
+}
+.about .info div p {
+  margin: 20px 0;
+}
+.about .info div a {
+  text-decoration: none;
+  color: red;
+}
+.about .info div b {
+  -moz-user-select: text;
+  user-select: text;
+  color: #ff9d00;
+}
+.about .info div:before {
+  content: '';
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  left: calc(100%/2 + 200px);
+  top: 0;
+  background: url("../img/menu/head.png") no-repeat;
+  background-size: cover;
+}
+.about .info div:after {
+  content: '';
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  left: calc(100%/2 - 350px);
+  top: 0;
+  background: url("../img/menu/head.png") no-repeat;
+  background-size: cover;
+}
+.loading {
+  width: 100%;
+  height: 100%;
+  background: azure url("../img/menu/ninja-loading.jpg") no-repeat;
+  background-size: cover;
+  color: #b7b7b7;
+}
+.loading div {
+  display: block;
+}
+.hide {
+  display: none;
+}
+/*# sourceMappingURL=style.css.map */

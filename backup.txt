@@ -1,0 +1,797 @@
+let gameWindowWidth = 640;
+let gameWindowHeight = 480;
+
+//creating engine
+let pjs = new PointJS(gameWindowWidth, gameWindowHeight, {
+	backgroundColor: 'white' // optional
+});
+
+// pjs.system.resize( gameWindowWidth, gameWindowHeight );
+pjs.system.initFullScale();
+pjs.system.initFullPage(); // for Full Page mode
+// pjs.system.initFullScreen(); // for Full Screen mode (only Desctop)
+let log = pjs.system.log;     // log = console.log;
+let game = pjs.game;           // Game Manager
+let point = pjs.vector.point;   // Constructor for Point
+let camera = pjs.camera;         // Camera Manager
+let brush = pjs.brush;          // Brush, used for simple drawing
+let OOP = pjs.OOP;            // Objects manager
+let math = pjs.math;           // More Math-methods
+let levels = pjs.levels;         // Levels manager
+// let layers = pjs.layers;
+let tiles = pjs.tiles;
+let system = pjs.system;
+let key = pjs.keyControl.initKeyControl();
+let mouse = pjs.mouseControl.initMouseControl();
+// let touch = pjs.touchControl.initTouchControl();
+// let act   = pjs.actionControl.initActionControl();
+let width = game.getWH().w; // width of scene viewport
+let height = game.getWH().h; // height of scene viewport
+let path_invironment = './img/invironment/',
+	path_characters = './img/characters/',
+	path_equipment = './img/equipment/';
+
+///////////////////////////////
+// PRELOADS
+///////////////////////////////
+
+//add Event onResize
+// window.addEventListener('resize', ()=> {
+// 	pjs.system.setStyle({
+// 		 left: (pjs.system.getWH().w - pjs.system.getCanvas().clientWidth)/2 + 'px',
+// 	});
+// 	return;
+// });
+
+let obj = {
+	ground: [
+		ground_0 = {
+			file: path_invironment + 'ground_0.jpg',
+			defaultWidth: 96, defaultHeight: 32
+		},
+		ground_1 = {
+			file: path_invironment + 'ground_1.jpg',
+			defaultWidth: 96, defaultHeight: 32
+		},
+		ground_2 = {
+			file: path_invironment + 'ground_1alt.jpg',
+			defaultWidth: 96, defaultHeight: 32
+		},
+		ground_3 = {
+			file: path_invironment + 'ground_0alt.jpg',
+			defaultWidth: 96, defaultHeight: 32
+		},
+		grass_0 = {
+			file: path_invironment + 'grass_0.png',
+			defaultWidth: 96, defaultHeight: 32
+		},
+	],
+	characters: [
+		player0_stand = {
+			file: path_characters + 'player_stand.png',
+			defaultWidth: 290, defaultHeight: 290,
+			speed: 2, frames: 4,
+		},
+		player0_run = {
+			file: path_characters + 'player_run.png',
+			defaultWidth: 300, defaultHeight: 266,
+			speed: 2, frames: 5,
+		},
+		player0_jump = {
+			file: path_characters + 'player_jump.png',
+			defaultWidth: 300, defaultHeight: 300,
+			speed: 2, frames: 3,
+		},
+		enemy0_stand = {
+			file: path_characters + 'enemy0_stand.png',
+			defaultWidth: 550, defaultHeight: 655,
+			speed: 2, frames: 4,
+		},
+		enemy0_run = {
+			file: path_characters + 'enemy0_run.png',
+			defaultWidth: 550, defaultHeight: 655,
+			speed: 2, frames: 5,
+		},
+		enemy0_attack = {
+			file: path_characters + 'enemy0_attack.png',
+			defaultWidth: 770, defaultHeight: 690,
+			speed: 2, frames: 5,
+		},
+		player0_defense = {
+			file: path_characters + 'player_defense.png',
+			defaultWidth: 300, defaultHeight: 300,
+			speed: 2, frames: 4,
+		},
+		player0_died = {
+			file: path_characters + 'player_died.png',
+			defaultWidth: 300, defaultHeight: 300,
+			speed: 2, frames: 4,
+		},
+		player0_attack = {
+			file: path_characters + 'player_attack.png',
+			defaultWidth: 300, defaultHeight: 300,
+			speed: 2, frames: 3,
+		},
+	],
+	shadow: [
+		default_0 = {
+			shadowColor: "gray",
+			shadowBlur: 6,
+			shadowX: 2,
+			shadowY: 2
+		},
+		angry = {
+			shadowColor: "red",
+			shadowBlur: 6,
+			shadowX: 0,
+			shadowY: 0
+		},
+		angry_enemy = {
+			shadowColor: "red",
+			shadowBlur: 8,
+			shadowX: 0,
+			shadowY: 0
+		},
+		blocked = {
+			shadowColor: "orange",
+			shadowBlur: 6,
+			shadowX: 0,
+			shadowY: 0
+		},
+	],
+};
+
+//building ground
+let floor = [
+	buildArrObjects([obj.ground[4]], -100, 495, 100),//grass,
+	buildArrObjects([obj.ground[2]], -105, 525, 100,),//light ground,
+	buildArrObjects([obj.ground[2], obj.ground[1]], -100, 556, 100),//light ground,
+	buildArrObjects([obj.ground[1], obj.ground[2]], -90, 587, 100),//light ground,
+	buildArrObjects([obj.ground[3]], -105, 618, 100),//dark ground
+	buildArrObjects([obj.ground[0], obj.ground[3]], -105, 649, 100),//dark ground
+	buildArrObjects([obj.ground[3], obj.ground[0]], -100, 679, 100),//dark ground
+	buildArrObjects([obj.ground[0], obj.ground[3]], -75, 700, 100),//dark ground
+	buildArrObjects([obj.ground[0], obj.ground[3]], -75, 721, 100),//dark ground
+	buildArrObjects([obj.ground[0], obj.ground[3]], -75, 742, 100),//dark ground
+	buildArrObjects([obj.ground[0], obj.ground[3]], -75, 763, 100),//dark ground
+	buildArrObjects([obj.ground[0], obj.ground[3]], -75, 784, 100),//dark ground
+	buildArrObjects([obj.ground[0], obj.ground[3]], -75, 805, 100),//dark ground
+];
+
+//animation from sprite
+let player_img = tiles.newImage(obj.characters[0].file);
+let player_anim = player_img.getAnimation(0, 0, obj.characters[0].defaultWidth, obj.characters[0].defaultHeight, obj.characters[0].frames);
+let player_stand = game.newAnimationObject({
+	// animation: tiles.newAnimation(obj.characters[1].file, 300, 266, 5),
+	animation: player_anim,
+	w: 150, h: 150,
+	x: 110, y: 300,
+	delay: 20,
+});
+let player_run = game.newAnimationObject({
+	animation: tiles.newAnimation(obj.characters[1].file, obj.characters[1].defaultWidth, obj.characters[1].defaultHeight, obj.characters[1].frames),
+	w: 150, h: 150,
+	delay: 6,
+});
+let player_jump = game.newAnimationObject({
+	animation: tiles.newAnimation(obj.characters[2].file, obj.characters[2].defaultWidth, obj.characters[2].defaultHeight, obj.characters[2].frames),
+	w: 150, h: 150,
+	delay: 110,
+});
+let player_defense = game.newAnimationObject({
+	animation: tiles.newAnimation(obj.characters[6].file, obj.characters[6].defaultWidth, obj.characters[6].defaultHeight, obj.characters[6].frames),
+	w: 150, h: 150,
+	delay: 10,
+});
+let player_died = game.newAnimationObject({
+	animation: tiles.newAnimation(obj.characters[7].file, obj.characters[7].defaultWidth, obj.characters[7].defaultHeight, obj.characters[7].frames),
+	w: 150, h: 150,
+	delay: 10,
+});
+let player_attack = game.newAnimationObject({
+	animation: tiles.newAnimation(obj.characters[8].file, obj.characters[8].defaultWidth, obj.characters[8].defaultHeight, obj.characters[8].frames),
+	w: 150, h: 150,
+	delay: 20,
+});
+let realBoxObject = game.newRectObject({
+	x: player_stand.x, y: player_stand.y,
+	w: 80, h: 150
+});
+realBoxObject.isInitFight = false;
+realBoxObject.comboCounter = 0;
+realBoxObject.attack = 1;
+realBoxObject.comboArray = [];
+realBoxObject.isGenerateCombo = false;
+
+//realize fighting system of player
+function fightingSystemOfPlayer(enemy) {
+	if (realBoxObject.isInitFight) {
+		let time = new Date();
+		let rez = time - playerTimer;
+		let damage = 0;
+
+		brush.drawRect({
+			x: camera.getPosition().x + 30, y: camera.getPosition().y + 240,
+			w: 20, h: 80,
+			fillColor: realBoxObject.comboCounter >= 3 ? 'orange' : 'white',
+			strokeColor: 'black',
+			strokeWidth: 2
+		});
+		brush.drawRect({
+			x: camera.getPosition().x + 30, y: camera.getPosition().y + 320,
+			w: 20, h: 80,
+			fillColor: realBoxObject.comboCounter >= 2 ? 'orange' : 'white',
+			strokeColor: 'black',
+			strokeWidth: 2
+		});
+		brush.drawRect({
+			x: camera.getPosition().x + 30, y: camera.getPosition().y + 400,
+			w: 20, h: 80,
+			fillColor: realBoxObject.comboCounter >= 1 ? 'orange' : 'white',
+			strokeColor: 'black',
+			strokeWidth: 2
+		});
+		if (realBoxObject.comboCounter === 0) damage = 0;
+		if (realBoxObject.comboCounter === 1) damage = realBoxObject.attack * 1;
+		if (realBoxObject.comboCounter === 2) damage = realBoxObject.attack * 2 + 1;
+		if (realBoxObject.comboCounter === 3) damage = realBoxObject.attack * 3 + 2;
+		pjs.brush.drawText({
+			text: 'Damage: ' + damage,
+			x: camera.getPosition().x + 30, y: camera.getPosition().y + 490,
+			color: "black",
+			style: 'bold',
+			size: 30
+		});
+
+		if (rez > 1000 && !realBoxObject.isGenerateCombo) {
+			realBoxObject.isGenerateCombo = true;
+			for(let i=0;i<3;i++)
+				realBoxObject.comboArray[i] = math.random(1,3);
+		}
+		if (rez > 1001 && realBoxObject.isGenerateCombo) {
+			if (HP >= 0) {
+				if (realBoxObject.comboArray[0] !== 0) {
+					brush.drawRoundRect({
+						x: realBoxObject.x + 30, y: realBoxObject.y - 40,
+						radius: 5,
+						w: 30, h: 30,
+						fillColor: '#e2e24a',
+						strokeColor: 'black',
+						strokeWidth: 2
+					});
+					pjs.brush.drawText({
+						text: realBoxObject.comboArray[0],
+						x: realBoxObject.x + 40, y: realBoxObject.y - 34,
+						color: "black",
+						style: 'bold',
+						size: 20
+					});
+				}
+				if (realBoxObject.comboArray[1] !== 0) {
+					brush.drawRoundRect({
+						x: realBoxObject.x + 60, y: realBoxObject.y - 40,
+						radius: 5,
+						w: 30, h: 30,
+						fillColor: '#e2e24a',
+						strokeColor: 'black',
+						strokeWidth: 2
+					});
+					pjs.brush.drawText({
+						text: realBoxObject.comboArray[1],
+						x: realBoxObject.x + 70, y: realBoxObject.y - 34,
+						color: "black",
+						style: 'bold',
+						size: 20
+					});
+				}
+				if (realBoxObject.comboArray[2] !== 0) {
+					brush.drawRoundRect({
+						x: realBoxObject.x + 90, y: realBoxObject.y - 40,
+						radius: 5,
+						w: 30, h: 30,
+						fillColor: '#e2e24a',
+						strokeColor: 'black',
+						strokeWidth: 2
+					});
+					pjs.brush.drawText({
+						text: realBoxObject.comboArray[2],
+						x: realBoxObject.x + 100, y: realBoxObject.y - 34,
+						color: "black",
+						style: 'bold',
+						size: 20
+					});
+				}
+			}
+			if (key.isPress('1')) {
+				for(let i=1;i<=3;i++){
+					if (realBoxObject.comboArray[i-1] === 1) {
+						realBoxObject.comboArray[i-1] = 0;
+						realBoxObject.comboCounter++;
+						break;
+					};
+				}
+			}
+			if (key.isPress('2')) {
+				for(let i=1;i<=3;i++){
+					if (realBoxObject.comboArray[i-1] === 2) {
+						realBoxObject.comboArray[i-1] = 0;
+						realBoxObject.comboCounter++;
+						break;
+					};
+				}
+			}
+			if (key.isPress('3')) {
+				for(let i=1;i<=3;i++){
+					if (realBoxObject.comboArray[i-1] === 3) {
+						realBoxObject.comboArray[i-1] = 0;
+						realBoxObject.comboCounter++;
+						break;
+					};
+				}
+			}
+		}
+		if (rez > 2500 && realBoxObject.isGenerateCombo && realBoxObject.comboCounter > 0) {
+			player_attack.setPosition(point(realBoxObject.getPosition().x - 40, realBoxObject.getPosition().y));
+			realBoxObject.animationObject = player_attack;
+		}
+		if (rez > 3000 && realBoxObject.isGenerateCombo) {
+			if (realBoxObject.comboCounter === 1) {
+				enemy.HP -= realBoxObject.attack; //-1
+			}
+			if (realBoxObject.comboCounter === 2) {
+				enemy.HP -= realBoxObject.attack * (realBoxObject.comboCounter + 1); //-3
+			}
+			if (realBoxObject.comboCounter === 3) {
+				enemy.HP -= realBoxObject.attack * (realBoxObject.comboCounter + 2); //-5
+			}
+			realBoxObject.isGenerateCombo = false;
+			realBoxObject.comboArray = [];
+			realBoxObject.comboCounter = 0;
+			realBoxObject.animationObject = player_stand;
+			playerTimer = new Date();
+		}
+	}
+}
+
+let myText = game.newTextObject({
+	positionC: point(game.getWH2().w, game.getWH2().h), // central position of text
+	size: 50, // size text
+	color: '#EAEAEA', // color text
+	text: 'Hello, World1!', // label
+	font: 'Arial' // font family
+});
+
+//let's create my army ahaaahaaha(evil laugh)
+let enemy1 = game.newRectObject({
+	w: 80, h: 165,
+	x: 500, y: 240,
+});
+let enemy2 = game.newRectObject({
+	w: 80, h: 165,
+	x: 800, y: 240,
+});
+let enemy_army = [];
+enemy_army.push(enemy1);
+enemy_army.push(enemy2);
+
+let enemy_stand = game.newAnimationObject({
+	animation: tiles.newImage(obj.characters[3].file).getAnimation(0, 0, obj.characters[3].defaultWidth, obj.characters[3].defaultHeight, obj.characters[3].frames),
+	x: enemy1.x, y: enemy1.y,
+	w: 150, h: 165,
+	delay: 13,
+});
+let enemy_run = game.newAnimationObject({
+	animation: tiles.newImage(obj.characters[4].file).getAnimation(0, 0, obj.characters[4].defaultWidth, obj.characters[4].defaultHeight, obj.characters[4].frames),
+	x: enemy1.x, y: enemy1.y,
+	w: 150, h: 165,
+	delay: 9,
+});
+let enemy_attack = game.newAnimationObject({
+	animation: tiles.newImage(obj.characters[5].file).getAnimation(0, 0, obj.characters[5].defaultWidth, obj.characters[5].defaultHeight, obj.characters[5].frames),
+	x: enemy1.x, y: enemy1.y,
+	w: 200, h: 175,
+	delay: 7,
+});
+
+for (let i = 0; i < enemy_army.length; i++) {
+	enemy_army[i].speed = point();
+	enemy_army[i].speed.y = 6;
+	enemy_army[i].area_browsing = 100;
+	enemy_army[i].isBrowsing = false;
+	enemy_army[i].basePosition = 500;
+	enemy_army[i].HP = 20;
+	enemy_army[i].maxHP = 20;
+	enemy_army[i].isInitFight = false;
+	enemy_army[i].maxEnemyAttack = 7;
+	enemy_army[i].minEnemyAttack = 3;
+	enemy_army[i].initBrowsing = function (bool = true) {
+		let flag = bool;
+		if (flag) {
+			this.basePosition = this.x;
+			this.isBrowsing = flag;
+			this.speed.x = 2;
+		} else this.speed.x = 0;
+	};
+	enemy_army[i].animationObject = enemy_stand;
+}
+
+//realize fight
+function fightingSystemOfEnemy(enemy) {
+	if (enemy.isInitFight) {
+		let time = new Date();
+		let rez = time - enemyTimer;
+		if ((rez > 1500) && (enemy.animationObject != enemy_attack)) {
+			enemy_attack.setPosition(point(enemy.getPosition().x - 95, enemy.getPosition().y - 10));
+			enemy_attack.setFlip(true, false);
+			enemy.animationObject = enemy_attack;
+			enemy.animationObject.drawFrames(1, 3);
+			enemy.animationObject.setFlip(true, false);
+			enemy.animationObject.step = 5;
+			enemy.animationObject.setShadow(obj.shadow[2]);
+		}
+		if ((rez > 1800) && (rez < 2100) && !wasAttack) {
+			if (playerBlocked) {
+				HP -= (Math.round(Math.random() * (enemy.maxEnemyAttack - enemy.minEnemyAttack) + enemy.minEnemyAttack)) * 0.55;
+				realBoxObject.animationObject.setShadow(obj.shadow[3]);
+			}
+			else {
+				HP -= (Math.round(Math.random() * (enemy.maxEnemyAttack - enemy.minEnemyAttack) + enemy.minEnemyAttack));
+				realBoxObject.animationObject.setShadow(obj.shadow[1]);
+			}
+			wasAttack = true;
+		}
+		if (rez > 2100) {
+			player_stand.setShadow(obj.shadow[0]);
+			player_run.setShadow(obj.shadow[0]);
+			player_jump.setShadow(obj.shadow[0]);
+			player_defense.setShadow(obj.shadow[0]);
+			wasAttack = false;
+			enemy.animationObject = enemy_stand;
+			enemy.animationObject.step = 13;
+			enemy.animationObject.setShadow({});
+			enemyTimer = new Date();
+		}
+	}
+}
+
+function buildArrObjects(obj, startX, startY, count) {
+	let arr = [];
+	let rand;
+	for (let i = 0; i < count; i++) {
+		rand = math.random(0, obj.length - 1);
+		arr[i] = game.newImageObject(obj[Number(rand)]);
+		arr[i].setPosition(point(startX + (obj[rand].defaultWidth - 1) * i, startY));
+	}
+	return arr;
+}
+
+function getCollisionBlocks(obj = realBoxObject) {
+	let collisionBlocks = [];
+
+	floor.forEach((i) => OOP.forArr(i, (b) => {
+		if (b.isInCameraStatic()) b.draw(); //optimize for camera
+		if (obj.getDistance(b.getPositionC()) < 170) {
+			collisionBlocks.push(b); //optimize for collisions
+		}
+	}));
+
+	return collisionBlocks;
+}
+
+let playerBlockTimer = new Date();
+let playerBlocked = false;
+let playerBlockDuration = 300;
+let wasAttack = false;
+let enemyTimer;
+let playerTimer;
+let keyAccess = true;
+let player_speed = point();
+let startJump = 0;
+let maxHP = 40;
+let HP = 40;
+let hpbar = game.newRoundRectObject({
+	x: camera.getPosition().x + 20, y: camera.getPosition().y + height - 100,
+	w: maxHP * 2 + 25, h: 40,
+	radius: 20,
+	fillColor: 'black'
+});
+let hpbarBackground = game.newRoundRectObject({
+	x: camera.getPosition().x + 25, y: camera.getPosition().y + height - 105,
+	w: maxHP * 2 + 15, h: 40 - 10,
+	radius: 15,
+	fillColor: 'white'
+});
+let hpbarHP = game.newRoundRectObject({
+	x: camera.getPosition().x + 25, y: camera.getPosition().y + height - 105,
+	w: HP * 2 - 10, h: 40 - 10,
+	radius: 15,
+	fillColor: 'red'
+});
+let textHealth = game.newTextObject({
+	w: 70, h: 25,
+	fillColor: '#000000',
+	text: "HEALTH",
+	size: 14,
+	padding: 2,
+	color: "white",
+	style: 'bold'
+});
+
+realBoxObject.animationObject = player_stand;
+enemy_army.map((enemy) => enemy.initBrowsing());
+system.initFPSCheck();
+hpbar.setShadow(obj.shadow[0]);
+textHealth.setShadow(obj.shadow[0]);
+player_stand.setShadow(obj.shadow[0]);
+player_run.setShadow(obj.shadow[0]);
+player_jump.setShadow(obj.shadow[0]);
+player_defense.setShadow(obj.shadow[0]);
+player_attack.setShadow(obj.shadow[0]);
+pjs.system.setTitle('PointJS Game'); // Set Title for Tab or Window
+
+
+///////////////////////////////
+// GAME LOOP
+///////////////////////////////
+
+game.newLoopFromConstructor('myGame', function () {
+	// Constructor Game Loop*
+
+	let menu = system.newDOM('div');
+	menu.className = 'menu';
+	menu.innerHTML = `
+			<h1>Welcome!</h1>
+			<div class="item">New Game</div>
+			<div class="item">About.</div>
+		`;
+
+	this.update = function () {
+		// Update function
+		game.clear(); // clear screen
+		//init camera movement
+		camera.follow(realBoxObject);
+
+
+
+		if (key.isPress('ESC')) {
+			menu.classList.toggle('hide');
+		}
+
+
+		//draw
+		myText.draw(); // drawing text
+		// realBoxObject.drawStaticBox('red');
+		// player_stand.drawDynamicBox('yellow');
+		brush.drawText({
+			text: 'FPS: ' + system.getFPS(),
+			color: 'red',
+			size: 30,
+			x: camera.getPosition().x,
+			y: camera.getPosition().y
+			// x: player_stand.x - width / 2 + 100,
+			// y: player_stand.y - height / 2 + 100
+		});
+
+		//collisions
+		pjs.vector.moveCollision(realBoxObject, getCollisionBlocks().concat(enemy_army), player_speed);
+		if (enemy_army.length > 0)
+		enemy_army.forEach((enemy) => {
+
+			enemy.animationObject.setPosition(point(enemy.getPosition().x - 40, enemy.getPosition().y));
+			if (enemy.animationObject == enemy_attack)
+				enemy.animationObject.setPosition(point(enemy.getPosition().x - 95, enemy.getPosition().y - 10));
+
+			//realize patrol method
+			if ((Math.abs(enemy.x - enemy.basePosition) > enemy.area_browsing) && enemy.isBrowsing) {
+				enemy.speed.x = (enemy.x < enemy.basePosition) ?
+					(Math.random() * (3 - 1) + 1) : -(Math.random() * (3 - 1) + 1);
+				if (enemy.speed.x < 0) {
+					enemy.animationObject = enemy_run;
+					enemy.animationObject.step = 9;
+					enemy.animationObject.setFlip(true, false);
+				} else {
+					enemy.animationObject = enemy_run;
+					enemy.animationObject.step = 9;
+					enemy.animationObject.setFlip(false, false);
+				}
+			}
+
+			//reaction on hero
+			if ((Math.abs(enemy.x - realBoxObject.x) < 350) && !enemy.isInitFight) {
+				enemy.initBrowsing(false);
+				enemy.basePosition = enemy.x;
+				enemy.animationObject.setFlip(true, false);
+				if (Math.abs(enemy.x - realBoxObject.x) > 150) {
+					if (Math.abs(enemy.x - realBoxObject.x) < 154) {
+						enemy.speed.x = 0;
+						keyAccess = false;
+						enemy.isInitFight = true;
+						realBoxObject.animationObject.setFlip(false, false);
+						player_defense.setFlip(false, false);
+						enemy_stand.setPosition(point(enemy.getPosition().x - 40, enemy.getPosition().y));
+						enemy.animationObject = enemy_stand;
+						enemy.animationObject.step = 13;
+						enemy.animationObject.setFlip(true, false);
+						enemy.x = realBoxObject.x + 150;
+						enemyTimer = new Date();
+						playerTimer = new Date();
+						realBoxObject.isInitFight = true;
+					}
+					else enemy.speed.x = -1;
+					pjs.vector.moveCollisionAngle(enemy, getCollisionBlocks(enemy), enemy.speed.x);
+				}
+			}
+
+			if (HP >= 0) fightingSystemOfEnemy(enemy);
+			if (enemy.isInitFight) fightingSystemOfPlayer(enemy);
+
+			pjs.vector.moveCollision(enemy, getCollisionBlocks(enemy), enemy.speed);
+			if ((enemy.isInitFight) && (enemy.animationObject == enemy_attack)) enemy.animationObject.drawToFrame(4);
+			else enemy.animationObject.draw();
+
+			//draw enemy HPbar
+			brush.drawRect({
+				x: enemy.x + (enemy.w / 3) - enemy.maxHP * 2, y: enemy.y - 40,
+				w: enemy.maxHP * 3, h: 10,
+				fillColor: 'black'
+			});
+			//draw enemy HP
+			brush.drawRect({
+				x: enemy.x + (enemy.w / 3) - enemy.maxHP * 2 + 3, y: enemy.y - 38,
+				w: enemy.HP * 3 - 6, h: 6,
+				fillColor: 'white'
+			});
+		});
+
+		//test on death enemy
+		for(let i=0;i<enemy_army.length;i++)
+			if (enemy_army[i].HP <= 0) {
+				console.log(enemy_army);
+				enemy_army.splice(i,1);
+				console.log(enemy_army);
+				keyAccess = true;
+				break;
+			}
+
+		//init player MOVEMENT
+		if (key.isDown('D') && keyAccess) {
+			player_stand.setFlip(false, false);
+			player_run.setFlip(false, false);
+			player_jump.setFlip(false, false);
+			player_defense.setFlip(false, false);
+			if (startJump - 5 < realBoxObject.getPosition().y && !key.isDown('W')) {
+				realBoxObject.animationObject = player_run;
+				realBoxObject.animationObject.setPosition(point(realBoxObject.getPosition().x - 40, realBoxObject.getPosition().y));
+				realBoxObject.animationObject.draw();
+			}
+			player_speed.x = obj.characters[0].speed + 0.5;
+		}
+		else if (key.isDown('A') && keyAccess) {
+			player_stand.setFlip(true, false);
+			player_run.setFlip(true, false);
+			player_jump.setFlip(true, false);
+			player_defense.setFlip(true, false);
+			if (startJump - 5 < realBoxObject.getPosition().y && !key.isDown('W')) {
+				realBoxObject.animationObject = player_run;
+				realBoxObject.animationObject.setPosition(point(realBoxObject.getPosition().x - 40, realBoxObject.getPosition().y));
+				realBoxObject.animationObject.draw();
+			}
+			player_speed.x = -(obj.characters[0].speed + 0.5);
+		}
+		else {
+			floor[0].forEach((elem) => {
+				if (!elem.isInCameraStatic() || (Math.abs(elem.getPosition().x - realBoxObject.getPosition().x) > 150)) return;
+				if (elem.isIntersect(realBoxObject)) {
+					if (playerBlocked) {
+						realBoxObject.animationObject = player_defense;
+						realBoxObject.animationObject.setPosition(point(realBoxObject.getPosition().x - 30, realBoxObject.getPosition().y + 5));
+					}
+					else if (realBoxObject.animationObject === player_attack){
+						realBoxObject.animationObject.setPosition(point(realBoxObject.getPosition().x - 40, realBoxObject.getPosition().y));
+					}	else {
+						player_stand.setPosition(point(realBoxObject.getPosition().x - 40, realBoxObject.getPosition().y + 5));
+						realBoxObject.animationObject.setPosition(point(realBoxObject.getPosition().x - 40, realBoxObject.getPosition().y + 5));
+						realBoxObject.animationObject = player_stand;
+					}
+					if (playerBlocked && (HP >= 0)) realBoxObject.animationObject.drawToFrame(3);
+					else if (realBoxObject.animationObject === player_attack) realBoxObject.animationObject.drawToFrame(3);
+					else if (HP >= 0) realBoxObject.animationObject.draw();
+				}
+			});
+			player_speed.x = 0;
+		}
+		if (key.isDown('W') && keyAccess) {
+			if (startJump - 150 > realBoxObject.getPosition().y) player_speed.y = 5;
+			floor[0].forEach((elem) => {
+				if (!elem.isInCameraStatic() || (Math.abs(elem.getPosition().x - realBoxObject.getPosition().x) > 150)) return;
+				if (elem.isIntersect(realBoxObject)) {
+					startJump = realBoxObject.getPosition().y;
+					player_speed.y = -obj.characters[0].speed * 2;
+				} else {
+					realBoxObject.animationObject = player_jump;
+					realBoxObject.animationObject.setPosition(point(realBoxObject.getPosition().x - 40, realBoxObject.getPosition().y));
+					realBoxObject.animationObject.draw();
+				}
+			});
+		}
+		else {
+			player_speed.y = 6;
+			if (startJump - 3 > realBoxObject.getPosition().y) {
+				realBoxObject.animationObject = player_jump;
+				realBoxObject.animationObject.setPosition(point(realBoxObject.getPosition().x - 40, realBoxObject.getPosition().y));
+				realBoxObject.animationObject.draw();
+			}
+		}
+
+		//realize block system
+		if (key.isPress('SPACE')) {
+			if (!playerBlocked) {
+				let time = new Date();
+				if (time - playerBlockTimer > playerBlockDuration) {
+					playerBlocked = true;
+					playerBlockTimer = time;
+				}
+			} else {
+				let time = new Date();
+				if (time - playerBlockTimer < playerBlockDuration)
+					playerBlocked = false;
+			}
+		} else {
+			let time = new Date();
+			if (playerBlocked && (time - playerBlockTimer > playerBlockDuration))
+				playerBlocked = false;
+		}
+
+		//if player had have died
+		if (HP <= 0) {
+			player_died.setPosition(point(realBoxObject.getPosition().x - 40, realBoxObject.getPosition().y + 10));
+			realBoxObject.animationObject = player_died;
+			realBoxObject.animationObject.drawToFrame(3);
+		}
+
+		//layer of hpbar
+		hpbar.x = camera.getPosition().x + 90;
+		hpbar.y = camera.getPosition().y + height - 100;
+		hpbar.w = maxHP * 2 + 25;
+		hpbar.draw();
+		textHealth.x = camera.getPosition().x + 103;
+		textHealth.y = camera.getPosition().y + height - 61;
+		textHealth.draw();
+		hpbarBackground.x = camera.getPosition().x + 95;
+		hpbarBackground.y = camera.getPosition().y + height - 95;
+		hpbarBackground.w = maxHP * 2 + 15;
+		hpbarBackground.draw();
+		if (HP >= 0) {
+			hpbarHP.x = camera.getPosition().x + 95;
+			hpbarHP.y = camera.getPosition().y + height - 95;
+			hpbarHP.w = HP * 2 + 15;
+			hpbarHP.draw();
+		}
+
+
+	};
+
+	this.entry = function () { // optional
+		log('myGame is started');
+	};
+
+	this.exit = function () { // optional
+		log('myGame is stopped');
+	};
+
+});
+
+game.startLoop('myGame');
+
+///////////////////////////////
+// POSTLOADS
+///////////////////////////////
+
+// window.onload = () => {
+// pjs.system.setStyle({
+// 	 left: (pjs.system.getWH().w - pjs.system.getCanvas().clientWidth)/2 + 'px',
+// });
+// window.oncontextmenu = () => {return false};
+// document.body.removeChild(document.body.lastChild);
+// };
+
